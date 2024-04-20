@@ -1,0 +1,73 @@
+import numpy as np
+import time
+
+start=time.time()
+
+#Generating the data
+
+mean1, mean2, mean3= np.array([3,6,1]), np.array([2,4,5]), np.array([10,20,27])
+Covs = np.array([
+                     np.diag([0.08, 0.01, 0.01]),
+                     np.diag([0.01, 0.05, 0.01]),
+                     np.diag([0.03, 0.07, 0.01])])
+
+
+Means= np.array([mean1, mean2, mean3])
+
+X1= np.random.multivariate_normal(mean1, Covs[0], 24)
+X2= np.random.multivariate_normal(mean2, Covs[1], 43)
+X3= np.random.multivariate_normal(mean3, Covs[2], 33)
+X0 = np.vstack([X1, X2, X3])
+np.random.shuffle(X0)
+
+num_clust= 3
+
+emeans= X0[np.random.choice(X0.shape[0], num_clust, replace=False ), :]
+
+print("Initialised Centroids--", '\n', emeans)
+
+print()
+
+
+N= X0.shape[0]
+
+labels= np.zeros(shape=(N,))
+
+def  min_dist(arr, p_mat):
+    return np.array([np.linalg.norm(arr- p_mat[i]) for i in range(p_mat.shape[0])])
+
+def assignmt(X, centroids):
+    n= centroids.shape[0]
+    for j in range(N):
+        labels[j]= np.argmin(min_dist(X[j], centroids))
+        
+    for i in range(n):
+        centroids[i]= np.mean(X[labels==i], axis=0)
+    return centroids
+
+#Iterations 
+
+num_iter= 30
+
+for k in range(num_iter):
+    emeans= assignmt(X0, emeans)
+
+ecovs= np.array([np.cov((X0[labels==i]).T) for i in range(num_clust)])
+ewts= np.array([(X0[labels==i]).shape[0] for i in range(num_clust)])/N
+
+end=time.time()
+
+print('Final centroids', '\n', emeans , '\n')
+print()
+print('Intra-cluster Covariance Matrices', '\n', ecovs, '\n')
+print()
+print('Final weights', '\n', ewts)
+print()
+
+print('Runtime(s)', '\n', end-start)
+
+
+
+
+        
+    
