@@ -23,6 +23,7 @@ def assignmt(X, centroids):
     return centroids
 
 clusts= 10
+num_iter= 20
 
 def WCSS(points, labs, centroids):
     arr= np.array([centroids[int(labs[i])] for i in range(N)])
@@ -32,8 +33,9 @@ sum_clusts=[]
 
 for i in range(2, clusts+1):
     means= X0[np.random.choice(X0.shape[0], i, replace=False ), :]
-    new_means= assignmt(X0, means)
-    sum_clusts.append(WCSS(X0, labels, new_means))
+    for j in range(num_iter):
+        means= assignmt(X0, means)
+    sum_clusts.append(WCSS(X0, labels, means))
 
 x_vals=[j for j in range(2,clusts+1)]
 
