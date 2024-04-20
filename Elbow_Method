@@ -1,0 +1,59 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+#Generating the data
+
+mean1, mean2, mean3= np.array([3,6,1]), np.array([2,4,5]), np.array([10,20,27])
+Covs = np.array([
+                     np.diag([0.08, 0.01, 0.01]),
+                     np.diag([0.01, 0.05, 0.01]),
+                     np.diag([0.03, 0.07, 0.01])])
+
+
+Means= np.array([mean1, mean2, mean3])
+
+X1= np.random.multivariate_normal(mean1, Covs[0], 2400)
+X2= np.random.multivariate_normal(mean2, Covs[1], 4300)
+X3= np.random.multivariate_normal(mean3, Covs[2], 3300)
+X0 = np.vstack([X1, X2, X3])
+
+N= X0.shape[0]
+
+labels= np.zeros(shape=(N,))
+
+def  min_dist(arr, p_mat):
+    return np.array([np.linalg.norm(arr- p_mat[i]) for i in range(p_mat.shape[0])])
+
+def assignmt(X, centroids):
+    n= centroids.shape[0]
+    for j in range(N):
+        labels[j]= np.argmin(min_dist(X[j], centroids))
+        
+    for i in range(n):
+        centroids[i]= np.mean(X[labels==i], axis=0)
+    return centroids
+
+clusts= 10
+
+def WCSS(points, labs, centroids):
+    arr= np.array([centroids[int(labs[i])] for i in range(N)])
+    return (np.sum(np.square(arr)))/(centroids.shape[0] * points.shape[0])
+
+sum_clusts=[]
+
+for i in range(2, clusts+1):
+    means= X0[np.random.choice(X0.shape[0], i, replace=False ), :]
+    new_means= assignmt(X0, means)
+    sum_clusts.append(WCSS(X0, labels, new_means))
+
+x_vals=[j for j in range(2,clusts+1)]
+
+plt.plot(x_vals, sum_clusts)
+plt.show()
+
+
+    
+    
+    
+    
+    
