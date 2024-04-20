@@ -59,7 +59,7 @@ likelihoods=[]
 
 def pdf_norm(x, mean, cov):
     k = len(x)
-    return ((2*np.pi)**(-k/2)) * ((np.linalg.det(cov))**(-1/2) ) * np.exp(-1/2*((x-mean).T@np.linalg.inv(cov)@(x-mean)))
+    return ((2*np.pi)**(-k/2)) * ((np.linalg.det(cov))**(-0.5) ) * np.exp(-0.5*((x-mean).T@np.linalg.inv(cov)@(x-mean)))
 
 
 def E_Step(X, means, covs, weights):
