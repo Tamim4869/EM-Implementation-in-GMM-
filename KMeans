@@ -42,7 +42,8 @@ def assignmt(X, centroids):
         labels[j]= np.argmin(min_dist(X[j], centroids))
         
     for i in range(n):
-        centroids[i]= np.mean(X[labels==i], axis=0)
+        if [labels==i]:
+            centroids[i]= np.mean(X[labels==i], axis=0)
     return centroids
 
 #Iterations 
