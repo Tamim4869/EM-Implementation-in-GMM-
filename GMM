@@ -1,0 +1,109 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+
+start= time.time()
+
+likelihoods=[]
+
+def pdf_norm(x, mean, cov):
+    k = len(x)
+    return ((2*np.pi)**(-k/2)) * ((np.linalg.det(cov))**(-1/2) ) * np.exp(-1/2*((x-mean).T@np.linalg.inv(cov)@(x-mean)))
+
+
+def E_Step(X, means, covs, weights):
+  
+    N =X.shape[0] 
+    def mix_pdf(x):
+        M= means.shape[0]
+        return np.array([pdf_norm(x, means[k], covs[k]) for k in range(M)])
+    
+    T = np.apply_along_axis(mix_pdf, 1, X) 
+    
+    wts_rep = np.tile(weights, (N, 1)) 
+
+    U= T*wts_rep
+    V= U/U.sum(axis=1)[:, None]
+    
+    l_hood= np.sum(np.log(np.sum(U, axis=1)))
+    likelihoods.append(l_hood)
+    
+    return V
+
+def M_Step(X, R, means, covs, weights):
+    N, M= X.shape[0], means.shape[0]
+    R_sum= np.sum(R, axis=0)
+    
+    new_wts= R_sum/N 
+    
+    #Updating the covariance matrices
+    for n in range(M):
+        new_mat= np.einsum('ij, j ->ij', (X-means[n]).T, (R.T)[n])
+        covs[n]= new_mat@(X-means[n])
+    
+    new_covs= np.einsum('ijk,i->ijk', covs, 1/R_sum)
+    
+    #Updating the means
+    
+    new_means= ((X.T @R)/R_sum).T
+    
+    return new_means, new_covs, new_wts
+
+#Generating the dataset
+
+mean1, mean2, mean3= np.array([3,6,1]), np.array([2,4,5]), np.array([10,20,27])
+Covs = np.array([
+                     np.diag([0.08, 0.01, 0.01]),
+                     np.diag([0.01, 0.05, 0.01]),
+                     np.diag([0.03, 0.07, 0.01])])
+
+Weights= [0.24, 0.43, 0.33]
+
+Means= np.array([mean1, mean2, mean3])
+
+X1= np.random.multivariate_normal(mean1, Covs[0], 550)
+X2= np.random.multivariate_normal(mean2, Covs[1], 6550)
+X3= np.random.multivariate_normal(mean3, Covs[2], 2900)
+X0 = np.vstack([X1, X2, X3])
+
+#Initialisations
+
+ewts=np.array([0.33, 0.33, 0.34])
+ecovs= np.array([
+                     np.diag([1,1,1]),
+                     np.diag([1,1,1]),
+                     np.diag([1,1,1])])
+emean1, emean2, emean3= np.array([1, 1, 3]), np.array([11, 23, 22]), np.array([2 ,5 , 1])
+emeans= np.array([emean1, emean2, emean3])
+
+num_iter= 30
+
+for i in range(num_iter):
+    T= E_Step(X0, emeans, ecovs, ewts)
+    emeans, ecovs, ewts = M_Step(X0, T, emeans, ecovs, ewts)
+
+end=time.time()
+
+x_vals= [i for i in range(num_iter)]
+
+plt.plot(x_vals, likelihoods)
+plt.show()
+
+print('Estimated Means:', '\n', emeans, '\n')
+print('Estimated Covariance Matrices:', '\n', ecovs, '\n')
+print('Estimated Weights:', '\n', ewts, '\n')
+
+
+for likhd in likelihoods:
+    print(likhd)
+
+print('Runtime(s)', '\n', end-start)
+
+
+
+
+
+
+
+    
+
