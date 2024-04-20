@@ -4,7 +4,7 @@ import time
 
 start=time.time()
 
-img= plt.imread('Image which the code is to be applied on')  
+img= plt.imread('Image which the code is to be applied on')
 (h,w,d)= img.shape
 X0= np.array(np.reshape(img, (h*w,d)))
 
@@ -31,7 +31,8 @@ def assignmt(X, centroids):
         labels[j]= np.argmin(min_dist(X[j], centroids))
         
     for i in range(n):
-        centroids[i]= np.mean(X[labels==i], axis=0)
+        if [labels==i]:
+            centroids[i]= np.mean(X[labels==i], axis=0)
     return centroids
 
 #Iterations 
@@ -126,7 +127,6 @@ print('Final Covariance Matrices:', '\n', ecovs, '\n')
 print('Final Weights:', '\n', ewts, '\n')
 
 print('Runtime(s)', '\n', end-start)
-
 
 
 
