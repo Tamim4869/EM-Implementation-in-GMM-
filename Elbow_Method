@@ -14,8 +14,8 @@ def  min_dist(arr, p_mat):
 
 def assignmt(X, centroids):
     n= centroids.shape[0]
-    labels= np.array([np.argmin(min_dist(X[j], centroids)) for j in range(N)])
-        
+    for j in range(N):
+        labels[j] = np.argmin(min_dist(X[j], centroids))
     for i in range(n):
         if [labels==i]:
             centroids[i]= np.mean(X[labels==i], axis=0)
