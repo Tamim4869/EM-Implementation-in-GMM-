@@ -12,9 +12,9 @@ def pdf_norm(x, mean, cov):
 
 def E_Step(X, means, covs, weights):
   
-    N =X.shape[0] 
+    N = len(X)
     def mix_pdf(x):
-        M= means.shape[0]
+        M= len(means)
         return np.array([pdf_norm(x, means[k], covs[k]) for k in range(M)])
     
     mixt = np.apply_along_axis(mix_pdf, 1, X) 
@@ -30,7 +30,7 @@ def E_Step(X, means, covs, weights):
     return V
 
 def M_Step(X, R, means, covs, weights):
-    N, M= X.shape[0], means.shape[0]
+    N, M= len(X), len(means)
     R_sum= np.sum(R, axis=0)
     
     new_wts= R_sum/N 
