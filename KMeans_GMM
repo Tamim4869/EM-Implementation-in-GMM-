@@ -68,11 +68,11 @@ def E_Step(X, means, covs, weights):
         M= means.shape[0]
         return np.array([pdf_norm(x, means[k], covs[k]) for k in range(M)])
     
-    T = np.apply_along_axis(mix_pdf, 1, X) 
+    mixt = np.apply_along_axis(mix_pdf, 1, X) 
     
     wts_rep = np.tile(weights, (N, 1)) 
 
-    U= T*wts_rep
+    U= mixt*wts_rep
     V= U/U.sum(axis=1)[:, None]
     
     l_hood= np.sum(np.log(np.sum(U, axis=1)))
@@ -104,8 +104,8 @@ def M_Step(X, R, means, covs, weights):
 num_iter2= 25
 
 for i in range(num_iter2):
-    T= E_Step(X0, emeans, ecovs, ewts)
-    emeans, ecovs, ewts = M_Step(X0, T, emeans, ecovs, ewts)
+    resp= E_Step(X0, emeans, ecovs, ewts)
+    emeans, ecovs, ewts = M_Step(X0, resp, emeans, ecovs, ewts)
 
 
 resp_mat= E_Step(X0, emeans, ecovs, ewts)
