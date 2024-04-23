@@ -17,8 +17,7 @@ print("Initialised Centroids--", '\n', emeans)
 
 print()
 
-
-N= X0.shape[0]
+N= len(X0)
 
 labels= np.zeros(shape=(N,))
 
@@ -26,7 +25,7 @@ def  min_dist(arr, p_mat):
     return np.array([np.linalg.norm(arr- p_mat[i]) for i in range(p_mat.shape[0])])
 
 def assignmt(X, centroids):
-    n= centroids.shape[0]
+    n= len(centroids)
     for j in range(N):
         labels[j]= np.argmin(min_dist(X[j], centroids))
         
@@ -62,10 +61,8 @@ def pdf_norm(x, mean, cov):
 
 
 def E_Step(X, means, covs, weights):
-  
-    N =X.shape[0] 
     def mix_pdf(x):
-        M= means.shape[0]
+        M= len(means)
         return np.array([pdf_norm(x, means[k], covs[k]) for k in range(M)])
     
     mixt = np.apply_along_axis(mix_pdf, 1, X) 
@@ -81,7 +78,7 @@ def E_Step(X, means, covs, weights):
     return V
 
 def M_Step(X, R, means, covs, weights):
-    N, M= X.shape[0], means.shape[0]
+    M= len(means)
     R_sum= np.sum(R, axis=0)
     
     new_wts= R_sum/N 
