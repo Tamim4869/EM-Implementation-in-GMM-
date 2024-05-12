@@ -1,0 +1,72 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+
+start= time.time()
+
+img= plt.imread('Image')
+(h,w,d)= img.shape
+X0= np.array(np.reshape(img, (h*w,d)))
+
+N, M= X0.shape
+
+labels= np.zeros(shape=(N,))
+
+def  min_dist(point, p_mat):
+    return np.argmin(np.apply_along_axis(np.linalg.norm, 1, point-p_mat))
+
+def assignmt(X, centroids):
+    n= len(centroids)
+    for j in range(N):
+        labels[j]= min_dist(X[j], centroids)
+        
+    for i in range(n):
+        if [labels==i]:
+            centroids[i]= np.mean(X[labels==i], axis=0)
+    return centroids
+
+clusts= 8
+num_iter= 30
+
+def CH(points, labs, centroids):
+    n, k= len(points), len(centroids)
+    centroid= np.mean(points, axis= 0)
+    assigned= centroids[labs.astype(int)]
+
+    BCSS= np.sum(np.square(assigned- centroid))
+    WCSS= np.sum(np.square(assigned-points))
+    print('Bcss now:---', BCSS)
+    print('Wcss now:---', WCSS)
+    return (BCSS*(n-k))/(WCSS*(k-1))
+    
+vrc_s=[]
+
+for i in range(2, clusts+1):
+    vrc= []
+    for k in range(5):
+        means= X0[np.random.choice(X0.shape[0], i, replace=False ), :]
+        for j in range(num_iter):
+            means= assignmt(X0, means)
+        vrc.append(CH(X0, labels, means))
+        
+    m= max(vrc)
+    vrc_s.append(m)
+    print("CH index for", i, "clusters:---", '\n', m)
+
+x_vals=[j for j in range(2,clusts+1)]
+
+plt.plot(x_vals, vrc_s)
+plt.xlabel('Number of Clusters')
+plt.ylabel('CH Index')
+
+plt.show()
+
+end= time.time()
+print("Runtime:", '\n', end-start)
+
+
+
+    
+
+    
+    
