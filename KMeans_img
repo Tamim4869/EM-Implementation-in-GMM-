@@ -1,0 +1,65 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+
+start= time.time()
+
+img= plt.imread('The Image')
+(h,w,d)= img.shape
+X0= np.array(np.reshape(img, (h*w,d)))
+
+N, M= X0.shape
+
+labels= np.zeros(shape=(N,))
+
+def  min_dist(point, p_mat):
+    return np.argmin(np.apply_along_axis(np.linalg.norm, 1, point-p_mat))
+
+def assignmt(X, centroids):
+    n= len(centroids)
+    for j in range(N):
+        labels[j]= min_dist(X[j], centroids)
+        
+    for i in range(n):
+        if [labels==i]:
+            centroids[i]= np.mean(X[labels==i], axis=0)
+    return centroids
+
+
+def WCSS(points, labs, centroids):
+    arr= centroids[labs.astype(int)]
+    return np.sum(np.square(points-arr))
+
+num_iter= 70
+num_clust= 4
+
+emeans= X0[np.random.choice(X0.shape[0], num_clust, replace=False ), :]
+
+print("Initialised Centroids--", '\n', emeans)
+
+print()
+
+wcss=[]
+for k in range(num_iter):
+    emeans= assignmt(X0, emeans)
+    wc= WCSS(X0, labels, emeans)
+    wcss.append(wc)
+    print('WCSS after', k+1, 'iterations:--', wc)
+    
+Y= np.array([emeans[int(labels[i])] for i in range(N)])
+new_img= Y.reshape(h,w,d)
+x_vals=[i for i in range(num_iter)]
+
+plt.figure()
+plt.imshow(new_img)
+
+plt.figure()
+plt.plot(x_vals, wcss)
+
+plt.show()
+end= time.time()
+
+print('Runtime(s)', '\n', end-start)
+
+
+
