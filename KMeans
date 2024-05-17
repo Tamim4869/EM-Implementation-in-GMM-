@@ -45,12 +45,19 @@ def assignmt(X, centroids):
             centroids[i]= np.mean(X[labels==i], axis=0)
     return centroids
 
+def WCSS(points, labs, centroids):
+    arr= centroids[labs.astype(int)]
+    return np.sum(np.square(points-arr))
+
 #Iterations 
 
 num_iter= 30
 
 for k in range(num_iter):
     emeans= assignmt(X0, emeans)
+    wc= WCSS(X0, labels, emeans)
+    wcss.append(wc)
+    print('WCSS after', k+1, 'iterations:--', wc)
 
 ecovs= np.array([np.cov((X0[labels==i]).T) for i in range(num_clust)])
 ewts= np.array([(X0[labels==i]).shape[0] for i in range(num_clust)])/N
