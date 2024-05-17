@@ -53,7 +53,10 @@ img= plt.imread('The Image')
 filtered= filtering(img, 3)
 
 (h,w,d)= filtered.shape
-X0= np.array(np.reshape(filtered, (h*w,d)))
+X1= np.array(np.reshape(img, (h*w,d)))
+
+A= np.random.rand(h*w, d)
+X0= X1+ A
 
 # KMeans first
 num_clust= 3           
