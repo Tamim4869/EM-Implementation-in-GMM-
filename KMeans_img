@@ -27,28 +27,51 @@ def assignmt(X, centroids):
             centroids[i]= np.mean(X[labels==i], axis=0)
     return centroids
 
-num_iter= 70
-num_clust= 4
+def WCSS(points, labs, centroids):
+    arr= centroids[labs.astype(int)]
+    return np.sum(np.square(points-arr))
 
-emeans= X0[np.random.choice(X0.shape[0], num_clust, replace=False ), :]
+#Iterations 
 
-print("Initialised Centroids--", '\n', emeans)
+num_clust= 5
+num_iter= 30
 
-print()
-
+wcss=[]
 for k in range(num_iter):
     emeans= assignmt(X0, emeans)
+    wc= WCSS(X0, labels, emeans)
+    wcss.append(wc)
+    print('WCSS after', k+1, 'iterations:--', wc)
     
+
+ecovs= np.array([np.cov((X0[labels==i]).T) for i in range(num_clust)])
+ewts= np.array([(X0[labels==i]).shape[0] for i in range(num_clust)])/N
+
 Y= np.array([emeans[int(labels[i])].astype(int) for i in range(N)])
-new_img= Y.reshape(h,w,d) 
+
+new_img= Y.reshape(h,w,d)
+x_vals=[i for i in range(num_iter)]
 
 plt.figure()
 plt.imshow(new_img)
 
+plt.figure()
+plt.plot(x_vals, wcss)
+
 plt.show()
-end= time.time()
+end=time.time()
+
+print('Final centroids', '\n', emeans , '\n')
+print()
+print('Intra-cluster Covariance Matrices', '\n', ecovs, '\n')
+print()
+print('Final weights', '\n', ewts)
+print()
 
 print('Runtime(s)', '\n', end-start)
 
-                
 
+
+
+        
+    
