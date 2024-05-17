@@ -34,7 +34,10 @@ def neighbourhood(image, i,j, window_size):
 img= plt.imread('The Image')
 
 (h,w,d)= img.shape
-X0= np.array(np.reshape(img, (h*w,d)))
+X1= np.array(np.reshape(img, (h*w,d)))
+
+A= np.random.rand(h*w, d)
+X0= X1+ A
 
 # KMeans first
 num_clust= 7
