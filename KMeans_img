@@ -25,11 +25,6 @@ def assignmt(X, centroids):
             centroids[i]= np.mean(X[labels==i], axis=0)
     return centroids
 
-
-def WCSS(points, labs, centroids):
-    arr= centroids[labs.astype(int)]
-    return np.sum(np.square(points-arr))
-
 num_iter= 70
 num_clust= 4
 
@@ -39,22 +34,14 @@ print("Initialised Centroids--", '\n', emeans)
 
 print()
 
-wcss=[]
 for k in range(num_iter):
     emeans= assignmt(X0, emeans)
-    wc= WCSS(X0, labels, emeans)
-    wcss.append(wc)
-    print('WCSS after', k+1, 'iterations:--', wc)
     
 Y= np.array([emeans[int(labels[i])] for i in range(N)])
 new_img= Y.reshape(h,w,d)
-x_vals=[i for i in range(num_iter)]
 
 plt.figure()
 plt.imshow(new_img)
-
-plt.figure()
-plt.plot(x_vals, wcss)
 
 plt.show()
 end= time.time()
