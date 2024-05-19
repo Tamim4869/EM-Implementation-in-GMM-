@@ -144,7 +144,7 @@ def refining(image, window_size, label_arr, means):
 
 #EM Iterations
 
-num_iter2= 60
+num_iter2= 40
 
 for i in range(num_iter2):
     resp= E_Step(X0, emeans, ecovs, ewts)
@@ -160,7 +160,7 @@ lab_arr2= lab_arr.reshape(h,w)
 new_img1= Y.reshape(h,w,d)
 new_img2= np.float32(new_img1)
 
-new_img= cv2.cvtColor(new_img2, cv2.COLOR_HSV2RGB)
+new_img= cv2.cvtColor(new_img2, cv2.COLOR_HSV2BGR)
 
 
 refined= refining(new_img, 3, lab_arr2, emeans)
