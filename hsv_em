@@ -1,0 +1,206 @@
+import numpy as np
+import statistics as st
+import cv2
+import matplotlib.pyplot as plt
+import time
+
+start=time.time()
+
+def neighbourhood(image, i,j, window_size):
+    (h,w)= image.shape[:2]
+    k=window_size//2
+    if j-k <0:
+        if i+k > h-1:
+            return image[i-k:h, 0:j+k+1]
+        elif i-k<0:
+            return image[0:i+k+1, 0:j+k+1]
+        else:
+            return image[i-k:i+k+1, 0:j+k+1]
+    elif j+k>w-1:
+        if i-k<0:
+            return image[0:i+k+1, j-k:w]
+        elif i+k>h-1:
+            return image[i-k:h, j-k:w]
+        else:
+            return image[i-k:i+k+1, j-k:w]
+    else:
+        if i-k<0:
+            return image[0:i+k+1, j-k:j+k+1]
+        elif i+k>h-1:
+            return image[i-k:h, j-k:j+k+1]
+        else:
+            return image[i-k:i+k+1, j-k:j+k+1]
+
+
+img1= plt.imread('Image')
+img = cv2.cvtColor(img1, cv2.COLOR_RGB2HSV)
+
+(h,w,d)= img.shape
+X0= np.array(np.reshape(img, (h*w,d)))
+
+# KMeans first
+num_clust= 4
+
+emeans= X0[np.random.choice(X0.shape[0], num_clust, replace=False ), :]
+
+print("Initialised Centroids--", '\n', emeans)
+
+print()
+
+N= len(X0)
+
+labels= np.zeros(shape=(N,))
+
+def min_dist(point, p_mat):
+    return np.argmin(np.apply_along_axis(np.linalg.norm, 1, point-p_mat))
+
+def assignmt(X, centroids):
+    n= len(centroids)
+    for j in range(N):
+        labels[j]= min_dist(X[j], centroids)
+        
+    for i in range(n):
+        if [labels==i]:
+            centroids[i]= np.mean(X[labels==i], axis=0)
+    return centroids
+
+#Iterations 
+
+num_iter= 40
+
+for k in range(num_iter):
+    emeans= assignmt(X0, emeans)
+
+ecovs= np.array([np.cov((X0[labels==i]).T) for i in range(num_clust)])
+ewts= np.array([(X0[labels==i]).shape[0] for i in range(num_clust)])/N
+
+end1= time.time()
+print('New centroids--', '\n', emeans , '\n')
+print()
+print('Intra-cluster Covariance Matrices--', '\n', ecovs, '\n')
+print()
+print('New weights--', '\n', ewts)
+print()
+print("Runtime for KMeans:", '\n', end1-start)
+
+#Proceeding to use these results as initialisations for the GMM
+
+likelihoods=[]
+
+def pdf_norm(x, mean, cov):
+    return ((2*np.pi)**(-len(x)/2)) * ((np.linalg.det(cov))**(-0.5) ) * np.exp(-0.5*((x-mean).T@np.linalg.inv(cov)@(x-mean)))
+
+
+def E_Step(X, means, covs, weights):
+    
+    def mix_pdf(x):
+        M= len(means)
+        return np.array([pdf_norm(x, means[k], covs[k]) for k in range(M)])
+    
+    mixt = np.apply_along_axis(mix_pdf, 1, X) 
+    
+    wts_rep = np.tile(weights, (N, 1)) 
+
+    U= mixt*wts_rep
+    V= U/U.sum(axis=1)[:, None]
+    print(np.sum(U, axis=1))
+    
+    l_hood= np.sum(np.log(np.sum(U, axis=1)))
+    print("Likelihood:", l_hood)
+    likelihoods.append(l_hood)
+    
+    return V
+
+def M_Step(X, R, means, covs, weights):
+    M= len(means)
+    R_sum= np.sum(R, axis=0)
+    
+    #Updating the weights
+    new_wts= R_sum/N 
+    
+    #Updating the covariance matrices
+    for n in range(M):
+        new_mat= np.einsum('ij, j ->ij', (X-means[n]).T, (R.T)[n])
+        covs[n]= new_mat@(X-means[n])
+    
+    new_covs= np.einsum('ijk,i->ijk', covs, 1/R_sum)
+    
+    #Updating the means
+    
+    new_means= ((X.T @R)/R_sum).T
+    
+    return new_means, new_covs, new_wts
+
+def refining(image, window_size, label_arr, means):
+    #label array is of the same shape as the image, in height and width
+    (h,w,d)= image.shape
+    def find_mode(v):
+        m= st.mode(neighbourhood(label_arr, v[0], v[1], window_size).flatten())
+        return means[m].astype(int)
+    r, c= np.meshgrid(np.arange(h), np.arange(w), indexing='ij')
+    B= np.stack((r,c), axis=-1)
+    new_image= np.apply_along_axis(find_mode, 2, B)
+    return new_image
+
+#EM Iterations
+
+num_iter2= 60
+
+for i in range(num_iter2):
+    resp= E_Step(X0, emeans, ecovs, ewts)
+    emeans, ecovs, ewts = M_Step(X0, resp, emeans, ecovs, ewts)
+
+resp_mat= E_Step(X0, emeans, ecovs, ewts)
+
+lab_arr= np.apply_along_axis(np.argmax, 1, resp_mat)
+
+Y= emeans[lab_arr].astype(int)
+
+lab_arr2= lab_arr.reshape(h,w)
+new_img1= Y.reshape(h,w,d)
+new_img2= np.float32(new_img1)
+
+new_img= cv2.cvtColor(new_img2, cv2.COLOR_HSV2RGB)
+
+
+refined= refining(new_img, 3, lab_arr2, emeans)
+
+x_vals=[i for i in range(num_iter2+1)]
+
+plt.figure()
+plt.imshow(new_img1)
+
+plt.figure()
+plt.imshow(new_img)
+
+plt.figure()
+plt.imshow(refined)
+
+plt.figure()
+
+plt.plot(x_vals, likelihoods)
+plt.xlabel('Number of Iterations')
+plt.ylabel('Expected Log Likelihood')
+
+plt.show()
+
+end=time.time()
+
+print('Final Means:', '\n', emeans, '\n')
+print('Final Covariance Matrices:', '\n', ecovs, '\n')
+print('Final Weights:', '\n', ewts, '\n')
+
+print('Runtime(s)', '\n', end-start)
+
+
+
+
+
+
+
+    
+    
+        
+    
+    
+    
