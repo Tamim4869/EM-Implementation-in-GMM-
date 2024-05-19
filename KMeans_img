@@ -6,9 +6,7 @@ start= time.time()
 
 img= plt.imread('The Image')
 (h,w,d)= img.shape
-X1= np.array(np.reshape(img, (h*w,d)))
-A= np.random.rand(h*w, d)
-X0= X1+ A
+X0= np.array(np.reshape(img, (h*w,d))).astype(float)
 
 N, M= X0.shape
 
