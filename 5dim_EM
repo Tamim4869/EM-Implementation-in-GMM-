@@ -1,0 +1,137 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+
+start=time.time()
+
+img= plt.imread('Image')
+(h,w,d)= img.shape
+A= np.array(np.reshape(img, (h*w,d)))
+posits= np.dstack(np.mgrid[0:h, 0:w])
+cols= np.array(np.reshape(posits, (h*w, 2)))
+X0= np.hstack((A, cols)).astype(float)
+
+# KMeans first
+num_clust= 5
+
+emeans= X0[np.random.choice(X0.shape[0], num_clust, replace=False ), :]
+
+print("Initialised Centroids--", '\n', emeans)
+
+print()
+
+N= len(X0)
+
+labels= np.zeros(shape=(N,))
+
+def  min_dist(arr, p_mat):
+    return np.array([np.linalg.norm(arr- p_mat[i]) for i in range(p_mat.shape[0])])
+
+def assignmt(X, centroids):
+    n= len(centroids)
+    for j in range(N):
+        labels[j]= np.argmin(min_dist(X[j], centroids))
+        
+    for i in range(n):
+        centroids[i]= np.mean(X[labels==i], axis=0)
+    return centroids
+
+#Iterations 
+
+num_iter= 50
+
+for k in range(num_iter):
+    emeans= assignmt(X0, emeans)
+
+ecovs= np.array([np.cov((X0[labels==i]).T) for i in range(num_clust)])
+ewts= np.array([(X0[labels==i]).shape[0] for i in range(num_clust)])/N
+
+
+print('New centroids', '\n', emeans , '\n')
+print()
+print('Intra-cluster Covariance Matrices', '\n', ecovs, '\n')
+print()
+print('New weights', '\n', ewts)
+print()
+
+#Proceeding to use these results as initialisations for the GMM
+
+likelihoods=[]
+
+def pdf_norm(x, mean, cov):
+    return ((2*np.pi)**(-len(x)/2)) * ((np.linalg.det(cov))**(-1/2) ) * np.exp(-1/2*((x-mean).T@np.linalg.inv(cov)@(x-mean)))
+
+
+def E_Step(X, means, covs, weights):
+
+    def mix_pdf(x):
+        M= means.shape[0]
+        return np.array([pdf_norm(x, means[k], covs[k]) for k in range(M)])
+    
+    resp = np.apply_along_axis(mix_pdf, 1, X) 
+    
+    wts_rep = np.tile(weights, (N, 1)) 
+
+    U= resp*wts_rep
+    V= U/U.sum(axis=1)[:, None]
+    
+    l_hood= np.sum(np.log(np.sum(U, axis=1)))
+    print("Likelihood:", l_hood)
+    likelihoods.append(l_hood)
+    
+    return V
+
+def M_Step(X, R, means, covs, weights):
+    M= len(means)
+    R_sum= np.sum(R, axis=0)
+    
+    new_wts= R_sum/N 
+    
+    #Updating the covariance matrices
+    for n in range(M):
+        new_mat= np.einsum('ij, j ->ij', (X-means[n]).T, (R.T)[n])
+        covs[n]= new_mat@(X-means[n])
+    
+    new_covs= np.einsum('ijk,i->ijk', covs, 1/R_sum)
+    
+    #Updating the means
+    
+    new_means= ((X.T @R)/R_sum).T
+    
+    return new_means, new_covs, new_wts
+
+#EM Iterations
+
+num_iter2= 80
+
+for i in range(num_iter2):
+    print('After', i+1, 'iterations:--', '\n')
+    resp= E_Step(X0, emeans, ecovs, ewts)
+    emeans, ecovs, ewts = M_Step(X0, resp, emeans, ecovs, ewts)
+
+
+resp_mat= E_Step(X0, emeans, ecovs, ewts)
+Y= np.array([emeans[np.argmax(resp_mat[i])].astype(int) for i in range(N)])
+Z= np.delete(Y, [3,4], axis=1)
+new_img= Z.reshape(h,w,d)
+
+x_vals=[i for i in range(num_iter2+1)]
+
+plt.figure()
+plt.imshow(new_img)
+
+plt.figure()
+plt.plot(x_vals, likelihoods)
+plt.xlabel('Number of Iterations')
+plt.ylabel('Expected Log Likelihood')
+
+plt.show()
+
+end=time.time()
+
+print('Final Means:', '\n', emeans, '\n')
+print('Final Covariance Matrices:', '\n', ecovs, '\n')
+print('Final Weights:', '\n', ewts, '\n')
+
+print('Runtime(s)', '\n', end-start)
+
